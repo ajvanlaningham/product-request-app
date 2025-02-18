@@ -1,0 +1,32 @@
+<div class="chat-container">
+    <!-- Sidebar for Chat History -->
+    <div class="chat-history">
+      <h3>Query History</h3>
+      <button (click)="startNewChat()">New Product Search</button>
+      <ul>
+        <li *ngFor="let session of chatSessions" (click)="selectChat(session)" [class.active]="session === selectedSession">
+          {{ session.date }}
+        </li>
+      </ul>
+    </div>
+  
+    <!-- Main Chat Window -->
+    <div class="chat-window">
+      <div class="chat-messages" *ngIf="selectedSession">
+        <div *ngFor="let message of selectedSession.messages" class="message" [ngClass]="message.sender">
+          <span class="timestamp">{{ message.timestamp | date:'shortTime' }}</span>
+          <p>{{ message.text }}</p>
+        </div>
+      </div>
+      <div class="chat-placeholder" *ngIf="!selectedSession">
+        <p>Select a previous query or start a new one</p>
+      </div>
+  
+      <!-- Input Box -->
+      <div class="chat-input">
+        <input type="text" [(ngModel)]="userInput" (keydown.enter)="sendMessage()" placeholder="Type a message...">
+        <button (click)="sendMessage()">Find Product</button>
+      </div>
+    </div>
+  </div>
+  
