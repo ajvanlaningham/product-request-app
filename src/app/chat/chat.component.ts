@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Import CommonModule for *ngFor, *ngIf, and Pipes
-import { FormsModule } from '@angular/forms'; // Import FormsModule for ngModel
+import { CommonModule } from '@angular/common'; 
+import { FormsModule } from '@angular/forms'; 
+import { AzureAiService } from '../services/azure-ai.service'; // Import the AI service
 
 interface ChatMessage {
   text: string;
@@ -17,7 +18,7 @@ interface ChatSession {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule], // Import CommonModule & FormsModule
+  imports: [CommonModule, FormsModule],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.css']
 })
@@ -25,6 +26,8 @@ export class ChatComponent implements OnInit {
   chatSessions: ChatSession[] = [];
   selectedSession: ChatSession | null = null;
   userInput: string = '';
+
+  constructor(private azureAiService: AzureAiService) {}
 
   ngOnInit(): void {
     this.loadChatHistory();
@@ -66,24 +69,32 @@ export class ChatComponent implements OnInit {
         timestamp: new Date()
       };
       this.selectedSession.messages.push(userMessage);
-      this.userInput = '';
-      this.getBotResponse();
       this.saveChatHistory();
-    }
-  }
+      
+      // Send user message to Azure AI
+      this.azureAiService.sendToAzureAI(this.userInput).subscribe(response => {
+        if (this.selectedSession) {
+          const botMessage: ChatMessage = {
+            text: response.choices[0].text.trim(), // Extract AI response
+            sender: 'bot',
+            timestamp: new Date()
+          };
+          this.selectedSession.messages.push(botMessage);
+          this.saveChatHistory();
+        }
+      }, error => {
+        console.error('Error fetching AI response:', error);
+        if (this.selectedSession) {
+          this.selectedSession.messages.push({
+            text: 'Error: Unable to fetch response from AI.',
+            sender: 'bot',
+            timestamp: new Date()
+          });
+        }
+      });
 
-  getBotResponse() {
-    setTimeout(() => {
-      if (this.selectedSession) {
-        const botMessage: ChatMessage = {
-          text: 'This is a placeholder response.',
-          sender: 'bot',
-          timestamp: new Date()
-        };
-        this.selectedSession.messages.push(botMessage);
-        this.saveChatHistory();
-      }
-    }, 1000);
+      this.userInput = '';
+    }
   }
 
   saveChatHistory() {
